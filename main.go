@@ -68,24 +68,13 @@ func main() {
         os.Exit(1)
     }
 
-    for _, t := range(parser.Tokens[0]) {
-        fmt.Printf("%#v \n", t)
-    }
     replacements := make(map[string]string)
     for _, line := range(parser.Tokens) {
-        var k string
-
         if rules.IsValid(line) {
-            for _, t := range(line) {
-                if t.Type == rules.TokenTagValue {
-                    if len(k) == 0 {
-                        k = t.Value
-                        replacements[k] = ""
-                    } else{
-                       replacements[k] = t.Value
-                    }
-                }
-            }
+            key, value := rules.GenerateReplacements(line)
+            fmt.Println(key)
+            fmt.Println(value)
+            replacements[key] = value
         }
     }
 

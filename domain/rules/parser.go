@@ -3,6 +3,7 @@ package rules
 import (
     "strings"
     "unicode/utf8"
+//    "fmt"
 )
 
 type TokenType int
@@ -27,7 +28,7 @@ type Parser struct {
     Line int
     Cursor int
     LastChar rune
-    Buffer string
+    Buffer []rune
 }
 
 func (parser *Parser) FilterValidLines() {
@@ -48,6 +49,7 @@ func (parser *Parser) Parse() error {
     parser.Tokens = make([][]*Token, 2)
     for i := range(parser.Content) {
        	parser.Line = i
+       	parser.Cursor = 0
         err := parser.ParseLine()
         if err != nil {
             return err
@@ -57,9 +59,10 @@ func (parser *Parser) Parse() error {
 }
 
 func (parser *Parser) ParseLine() error {
-    max := utf8.RuneCount([]byte(parser.Content[parser.Line]))
+    //max := utf8.RuneCount([]byte(parser.Content[parser.Line]))
+    max := len(parser.Content[parser.Line])
 
-    if parser.Cursor > max {
+    if parser.Cursor == max {
         token := &Token {
             Type: TokenEOL,
             Value: "",
@@ -101,13 +104,13 @@ func (parser *Parser) ParseLine() error {
         current, size = utf8.DecodeRuneInString(parser.Content[parser.Line][parser.Cursor:])
         parser.Cursor += size
         if current == ' ' || parser.Cursor == max-1 {
-            if parser.Buffer == "replace" {
+            if string(parser.Buffer) == "replace" {
                 token := &Token {
                     Type: TokenReplace,
                     Value: "replace",
                 }
                 parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
-            } else if  parser.Buffer == "with" {
+            } else if string(parser.Buffer) == "with" {
                 token := &Token {
                     Type: TokenWith,
                     Value: "with",
@@ -116,26 +119,26 @@ func (parser *Parser) ParseLine() error {
             } else {
                 token := &Token {
                     Type: TokenUnknown,
-                    Value: parser.Buffer,
+                    Value: string(parser.Buffer),
                 }
                 parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
             }
-            parser.Buffer = ""
+            parser.Buffer = []rune{}
             return parser.ParseLine()
         }
-        parser.Buffer += string(current)
+        parser.Buffer = append(parser.Buffer, current)
     }
 
     return parser.ParseLine()
 }
 
 func (parser *Parser) ConsumeTag(max int) {
-    if parser.Cursor == max {
+    if parser.Cursor >= max {
         token := &Token {
             Type: TokenTagValue,
-            Value: parser.Buffer,
+            Value: string(parser.Buffer),
         }
-        parser.Buffer = ""
+        parser.Buffer = []rune{}
         parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
         return
     }
@@ -143,9 +146,9 @@ func (parser *Parser) ConsumeTag(max int) {
     if current == '>' && parser.LastChar != '\\' {
         token := &Token {
             Type: TokenTagValue,
-            Value: parser.Buffer,
+            Value: string(parser.Buffer),
         }
-        parser.Buffer = ""
+        parser.Buffer = []rune{}
         parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
         return
     }
@@ -153,17 +156,17 @@ func (parser *Parser) ConsumeTag(max int) {
         if parser.LastChar == '\\' {
             var c rune
             parser.LastChar = c
-            parser.Buffer += "\\"
+            parser.Buffer = append(parser.Buffer, '\\')
             parser.Cursor += size
             parser.ConsumeTag(max)
         } else {
-            parser.LastChar = rune(current)
+            parser.LastChar = current
             parser.Cursor += size
             parser.ConsumeTag(max)
         }
     } else {
         parser.LastChar = current
-        parser.Buffer += string(current)
+        parser.Buffer = append(parser.Buffer, current)
         parser.Cursor += size
         parser.ConsumeTag(max)
     }
