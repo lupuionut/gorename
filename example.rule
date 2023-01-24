@@ -1,0 +1,3 @@
+# each replaced/replacement char(s) must be defined inside <>
+# for example `replace <%> with <#>` will replace each occurance of % with #
+replace <%> with <#>
