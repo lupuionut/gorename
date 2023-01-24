@@ -2,6 +2,7 @@ package rules
 
 import (
     "strings"
+    "unicode/utf8"
 )
 
 type TokenType int
@@ -56,9 +57,9 @@ func (parser *Parser) Parse() error {
 }
 
 func (parser *Parser) ParseLine() error {
-    max := len(parser.Content[parser.Line])
+    max := utf8.RuneCount([]byte(parser.Content[parser.Line]))
 
-    if parser.Cursor >= max {
+    if parser.Cursor > max {
         token := &Token {
             Type: TokenEOL,
             Value: "",
@@ -68,35 +69,37 @@ func (parser *Parser) ParseLine() error {
         return nil
     }
 
-    if parser.Content[parser.Line][parser.Cursor] == ' ' {
-        parser.Cursor++
+    current, size := utf8.DecodeRuneInString(parser.Content[parser.Line][parser.Cursor:])
+
+    if current == ' ' {
+        parser.Cursor += size
         return parser.ParseLine()
     }
 
-    if parser.Content[parser.Line][parser.Cursor] == '<' {
+    if current == '<' {
         token := &Token {
             Type: TokenTagStart,
             Value: "<",
         }
         parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
-        parser.Cursor++
+        parser.Cursor += size
         parser.ConsumeTag(max)
         return parser.ParseLine()
     }
 
-    if parser.Content[parser.Line][parser.Cursor] == '>' {
+    if current == '>' {
         token := &Token {
             Type: TokenTagEnd,
             Value: ">",
         }
         parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
-        parser.Cursor++
+        parser.Cursor += size
         return parser.ParseLine()
     }
 
-    for i := parser.Cursor; i < max; i++  {
-        current := parser.Content[parser.Line][i]
-        parser.Cursor++
+    for i := parser.Cursor; i < max; i += size  {
+        current, size = utf8.DecodeRuneInString(parser.Content[parser.Line][parser.Cursor:])
+        parser.Cursor += size
         if current == ' ' || parser.Cursor == max-1 {
             if parser.Buffer == "replace" {
                 token := &Token {
@@ -128,34 +131,40 @@ func (parser *Parser) ParseLine() error {
 
 func (parser *Parser) ConsumeTag(max int) {
     if parser.Cursor == max {
+        token := &Token {
+            Type: TokenTagValue,
+            Value: parser.Buffer,
+        }
+        parser.Buffer = ""
+        parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
         return
     }
-    var content string
-    for i := parser.Cursor; i < max; i++ {
-        current := parser.Content[parser.Line][i]
-        if current == '>' && parser.LastChar != '\\' {
-            token := &Token {
-                Type: TokenTagValue,
-                Value: content,
-            }
-            parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
-            return
+    current, size := utf8.DecodeRuneInString(parser.Content[parser.Line][parser.Cursor:])
+    if current == '>' && parser.LastChar != '\\' {
+        token := &Token {
+            Type: TokenTagValue,
+            Value: parser.Buffer,
         }
-        if current == '\\' {
-            if parser.LastChar == '\\' {
-                var c rune
-                parser.LastChar = c
-                content += "\\"
-                parser.Cursor++
-            } else {
-                parser.LastChar = rune(current)
-                parser.Cursor++
-                continue
-            }
+        parser.Buffer = ""
+        parser.Tokens[parser.Line] = append(parser.Tokens[parser.Line], token)
+        return
+    }
+    if current == '\\' {
+        if parser.LastChar == '\\' {
+            var c rune
+            parser.LastChar = c
+            parser.Buffer += "\\"
+            parser.Cursor += size
+            parser.ConsumeTag(max)
         } else {
             parser.LastChar = rune(current)
-            content += string(current)
-            parser.Cursor++
+            parser.Cursor += size
+            parser.ConsumeTag(max)
         }
+    } else {
+        parser.LastChar = current
+        parser.Buffer += string(current)
+        parser.Cursor += size
+        parser.ConsumeTag(max)
     }
 }

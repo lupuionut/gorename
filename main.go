@@ -68,6 +68,9 @@ func main() {
         os.Exit(1)
     }
 
+    for _, t := range(parser.Tokens[0]) {
+        fmt.Printf("%#v \n", t)
+    }
     replacements := make(map[string]string)
     for _, line := range(parser.Tokens) {
         var k string
