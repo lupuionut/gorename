@@ -7,6 +7,7 @@ import (
     "github.com/lupuionut/gorename/domain/cli"
     "github.com/lupuionut/gorename/domain/finder"
     "github.com/lupuionut/gorename/domain/rules"
+    "github.com/lupuionut/gorename/domain/renamer"
 )
 
 func main() {
@@ -54,7 +55,6 @@ func main() {
     if errf != nil {
         fmt.Println(errf)
     }
-    fmt.Println(files)
 
     rulesLines := strings.Split(string(rulesContent), "\n")
     parser := rules.Parser {
@@ -72,11 +72,9 @@ func main() {
     for _, line := range(parser.Tokens) {
         if rules.IsValid(line) {
             key, value := rules.GenerateReplacements(line)
-            fmt.Println(key)
-            fmt.Println(value)
             replacements[key] = value
         }
     }
 
-    fmt.Println(replacements)
+    renamer.Iterate(files, replacements)
 }
