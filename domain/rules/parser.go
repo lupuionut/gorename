@@ -3,7 +3,7 @@ package rules
 import (
     "strings"
     "unicode/utf8"
-//    "fmt"
+    //"fmt"
 )
 
 type TokenType int
@@ -46,7 +46,7 @@ func (parser *Parser) FilterValidLines() {
 
 func (parser *Parser) Parse() error {
     parser.FilterValidLines()
-    parser.Tokens = make([][]*Token, 2)
+    parser.Tokens = make([][]*Token, len(parser.Content))
     for i := range(parser.Content) {
        	parser.Line = i
        	parser.Cursor = 0
