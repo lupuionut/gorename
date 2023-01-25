@@ -18,7 +18,7 @@ func (ren *Finder) FindItems() ([]string, error) {
     var errText string
     stat, err := os.Stat(ren.Path)
     if err != nil {
-  	return nil, err
+        return nil, err
     }
     if !stat.IsDir() {
         return []string{ren.Path}, nil
@@ -38,7 +38,7 @@ func (ren *Finder) FindItems() ([]string, error) {
         }
         if !stat.IsDir() {
            files = append(files, location)
-       	} else {
+        } else {
             if ren.Recursive == true {
                 if !strings.HasSuffix(location, "/") {
                     location += "/"
@@ -55,7 +55,7 @@ func (ren *Finder) FindItems() ([]string, error) {
                 }
                 files = append(files, newfiles...)
             }
-       	}
+        }
     }
 
     if errText == "" {

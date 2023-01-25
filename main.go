@@ -32,8 +32,8 @@ func main() {
         os.Exit(1)
     }
     if commands.Commands["rules"] == "" {
-	fmt.Println("You must specify the file that contains the renaming rules. e.g. -rules=/path/to/rules.rule")
-    	os.Exit(1)
+        fmt.Println("You must specify the file that contains the renaming rules. e.g. -rules=/path/to/rules.rule")
+        os.Exit(1)
     }
 
     // if rules cannot be read, exit
