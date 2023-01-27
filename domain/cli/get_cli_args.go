@@ -67,8 +67,11 @@ func (cli *Instance) Help() string {
     helpText := "Usage: gorename COMMANDS \n\n COMMANDS:\n"
     for v := range(cli.Commands) {
         var choices string
-        if v == "path" {
+        if v == "target" {
             choices = "You must specify the full path to the folder that contains the files to rename."
+        }
+        if v == "recursive" {
+            choices = "[no | yes] Default is no."
         }
         helpText += fmt.Sprintf("`-%s= `. " + choices + "\n", v)
     }

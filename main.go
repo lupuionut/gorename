@@ -15,6 +15,7 @@ func main() {
     defaults := make(map[string]string)
     defaults["target"] = ""
     defaults["rules"] = ""
+    defaults["recursive"] = "no"
 
     commands := &cli.Instance{ Commands: defaults }
     commands.ParseArgs(args)
@@ -46,11 +47,18 @@ func main() {
     if !strings.HasSuffix(commands.Commands["target"], "/") {
         commands.Commands["target"] += "/"
     }
+
+    recursive := false
+    if defaults["recursive"] == "yes" {
+        recursive = true
+    }
+
     searcher := &finder.Finder{
         Cli: commands,
         Path: commands.Commands["target"],
-        Recursive: false,
+        Recursive: recursive,
     }
+
     files, errf := searcher.FindItems();
     if errf != nil {
         fmt.Println(errf)
